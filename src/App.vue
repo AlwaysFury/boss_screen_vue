@@ -37,7 +37,7 @@ body {
 }
 .el-input {
   // 固定宽度
-  width: 190px !important;
+  // width: 190px !important;
 }
 .w190 {
   width: 190px !important;

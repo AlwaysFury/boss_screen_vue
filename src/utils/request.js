@@ -2,29 +2,26 @@
 // 导入axios
 import axios from 'axios'
 import { ElMessage } from 'element-plus'
+import qs from "qs"
 //1. 创建新的axios实例，
 const service = axios.create({
   // 公共接口
   baseURL: "",
   // 超时时间 单位是ms，这里设置了3s的超时时间
-  timeout: 10 * 1000
+  timeout: 10 * 1000,
+  paramsSerializer: function (params) {
+    return qs.stringify(params, { arrayFormat: 'repeat' })
+  }
 })
 // 2.请求拦截器
 service.interceptors.request.use(config => {
-  config.params = removeEmptyKey(config.params)
   //发请求前做的一些处理，数据转化，配置请求头，设置token,设置loading等，根据需求去添加
-  config.data = JSON.stringify(config.data); //数据转化,也可以使用qs转换
   config.headers = {
     'Content-Type': 'application/json' //配置请求头
-  };
-  // config.headers = { 'Content-Type':'application/x-www-form-urlencoded' }
-  //如有需要：注意使用token的时候需要引入cookie方法或者用本地localStorage等方法，推荐js-cookie
-  //const token = getCookie('名称');//这里取token之前，你肯定需要先拿到token,存一下
-  //if(token){ 
+  }
 
-  //config.params = {'token':token} //如果要求携带在参数中
-  //config.headers.token= token; //如果要求携带在请求头中
-  //}
+  config.params = removeEmptyKey(config.params)
+  config.data = JSON.stringify(config.data); //数据转化,也可以使用qs转换
   return config
 }, error => {
   Promise.reject(error)
@@ -34,18 +31,30 @@ service.interceptors.request.use(config => {
 service.interceptors.response.use(response => {
   //接收到响应数据并成功后的一些共有的处理，关闭loading等
   try {
-    if (response.data.flag) {
-      return Promise.resolve(response.data.data);
+    // 需要按后台返回信息提示的接口
+    const needMsgs = [
+      "/api/product/refreshProducts",
+      "/api/order/refreshOrders",
+      "/api/product/refreshGrade",
+      "/api/photo/refreshGrade"
+    ]
+    const resData = response.data
+    if (resData.flag) {
+      if (needMsgs.includes(response.config.url) && resData.message) {
+        ElMessage({
+          message: resData.message,
+          type: 'success',
+        })
+      }
+      return Promise.resolve(resData.data);
     } else {
       ElMessage({
-        message: response.data.message ?? "服务器异常",
+        message: resData.message ?? "服务器异常",
         type: 'error',
       })
-      return Promise.reject(response.data.message ?? "服务器异常")
+      return Promise.reject(resData.message ?? "服务器异常")
     }
-  } catch {
-
-  }
+  } catch (e) { }
 
 }, error => {
   /***** 接收到异常响应的处理开始 *****/

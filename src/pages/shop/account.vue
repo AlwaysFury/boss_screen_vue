@@ -23,7 +23,7 @@
         <el-form-item label="授权时间">
           <el-date-picker v-model="timeRange"
             type="datetimerange"
-            value-format="YYYY-MM-DD hh:mm:ss"
+            value-format="YYYY-MM-DD HH:mm:ss"
             placeholder=""
             clearable />
         </el-form-item>
@@ -62,11 +62,13 @@
       </div>
       <div class="right">
         <el-pagination v-model:current-page="currentPage"
+          :page-sizes="[10, 30, 50, 100]"
           :page-size="10"
           :background="true"
-          layout="total, prev, pager, next"
+          layout="sizes, total, prev, pager, next"
           :total="totalPage"
-          @current-change="handleCurrentChange" />
+          @current-change="handleCurrentChange"
+          @size-change="handleSizeChange" />
       </div>
     </div>
   </div>
@@ -93,7 +95,7 @@ const tableData = ref([])
 
 function onQuery() {
   currentPage.value = 1;
-  if (timeRange.value.length) {
+  if (timeRange.value && timeRange.value.length) {
     params.value.start_time = timeRange.value[0]
     params.value.end_time = timeRange.value[1]
   } else {
@@ -111,6 +113,12 @@ function reset() {
 
 function handleCurrentChange(val) {
   currentPage.value = val;
+  getList()
+}
+
+function handleSizeChange(val) {
+  params.value.size = val;
+  currentPage.value = 1;
   getList()
 }
 

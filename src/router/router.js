@@ -36,7 +36,31 @@ const routes = [
         path: "/rule",
         name: "rule",
         component: () => import('@/pages/product/levelList.vue'),
-        meta: { title: "产品列表" }
+        meta: { title: "等级列表" }
+      },
+      {
+        path: "/pattern",
+        name: "pattern",
+        component: () => import('@/pages/product/pattern/index.vue'),
+        meta: { title: "图案列表" }
+      },
+      {
+        path: "/tag",
+        name: "tag",
+        component: () => import('@/pages/product/tag/index.vue'),
+        meta: { title: "标签列表" }
+      },
+      {
+        path: "/model",
+        name: "model",
+        component: () => import('@/pages/product/model/index.vue'),
+        meta: { title: "款号列表" }
+      },
+      {
+        path: "/category",
+        name: "category",
+        component: () => import('@/pages/product/category/index.vue'),
+        meta: { title: "分类列表" }
       },
       {
         path: "/logList",

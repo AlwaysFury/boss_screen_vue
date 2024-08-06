@@ -1,16 +1,13 @@
 <template>
-	<div class="cost">
+	<div class="model">
 		<div class="search gutter">
 			<el-form :inline="true" :model="formInline" class="demo-form-inline">
-				<el-form-item label="衣服种类">
-					<el-select v-model="formInline.cost_type" class="w190" clearable>
-						<el-option
-							v-for="item in costSelectData"
-							:label="item.value"
-							:value="item.key"
-							:key="item.key"
-						/>
-					</el-select>
+				<el-form-item label="款号">
+					<el-input
+						v-model="formInline.sku_name"
+						placeholder="请输入款号"
+						clearable
+					/>
 				</el-form-item>
 				<el-form-item label="时间">
 					<el-date-picker
@@ -37,13 +34,9 @@
 				@row-click="showDetail"
 			>
 				<el-table-column type="selection" width="55" />
-				<!-- <el-table-column prop="name"
-          label="产品名称" /> -->
-				<el-table-column prop="type" label="衣服种类" />
-				<el-table-column prop="price" label="成本" />
-				<el-table-column prop="exchangeRate" label="汇率" />
-				<el-table-column prop="startTime" label="开始时间" />
-				<el-table-column prop="endTime" label="结束时间" />
+				<el-table-column prop="name" label="款号" />
+				<el-table-column prop="count" label="关联款号数量" />
+				<el-table-column prop="createTime" label="创建时间" />
 			</el-table>
 		</div>
 		<div class="action">
@@ -66,25 +59,65 @@
 				/>
 			</div>
 		</div>
-		<el-dialog v-model="dialogVisible" :title="title" width="400" center>
-			<costDetail
-				:data="detailData"
-				:costSelectData="costSelectData"
-				@save="onSaveData"
-			/>
+		<el-dialog v-model="dialogVisible" :title="title" width="800" center>
+			<el-form :model="detailData" label-width="100">
+				<el-form-item label="款号名称" required>
+					<el-input
+						v-model="detailData.name"
+						placeholder="请输入款号名称"
+						clearable
+					/>
+				</el-form-item>
+				<el-form-item label="关联款号">
+					<el-select v-model="skuIds" clearable multiple>
+						<el-option
+							v-for="item in tableData"
+							:label="item.name"
+							:value="item.id"
+							:key="item.id"
+						/>
+					</el-select>
+				</el-form-item>
+				<!-- <el-form-item label="所属店铺"
+          required>
+          <el-select v-model="detailData.shopId"
+            class="w190"
+            clearable>
+            <el-option v-for="item in shopSelectData"
+              :label="item.value"
+              :value="item.key"
+              :key="item.key" />
+          </el-select>
+        </el-form-item> -->
+			</el-form>
+			<el-divider />
+			<h3>统计信息</h3>
+			<el-table :data="linkSkuData" stripe border style="width: 100%">
+				<el-table-column prop="name" label="款号" />
+				<el-table-column prop="saleVolume" label="销量" />
+				<el-table-column prop="itemIds" label="所在链接" />
+				<el-table-column prop="shopNames" label="所在店铺" />
+			</el-table>
+			<template #footer>
+				<div class="dialog-action">
+					<el-button type="primary" @click="onSaveData">确认</el-button>
+					<el-button @click="dialogVisible = false">取消</el-button>
+				</div>
+			</template>
 		</el-dialog>
 	</div>
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { ElMessage } from "element-plus";
-import costDetail from "./costDetail.vue";
+import { computed, reactive, ref } from "vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
-	getCostTypeSelect,
-	getCostList,
-	deleteCost,
-	updateCost,
+	getShopSelect,
+	getModelList,
+	getModelDetail,
+	getLinkSku,
+	deleteModel,
+	updateModel,
 } from "@/network/api";
 
 const formInline = ref({});
@@ -92,38 +125,66 @@ const currentPage = ref(1);
 const totalPage = ref(0);
 const multipleTableRef = ref();
 const multipleSelection = ref([]);
+// 店铺列表数据
+const shopSelectData = ref([]);
 const timeRange = ref([]);
-const title = ref("新增成本");
+const title = ref("新增款号");
 const dialogVisible = ref(false);
 const detailData = ref({});
-const costSelectData = ref([]);
 
 const params = ref({
 	size: 10,
 });
 
 const tableData = ref([]);
+const linkSkuData = ref([]);
+
+// 关联款号id
+const skuIds = ref([]);
 
 function onClickAdd() {
-	title.value = "新增成本";
+	title.value = "新增款号";
 	detailData.value = {};
+	skuIds.value = [];
+	linkSkuData.value = [];
 	dialogVisible.value = true;
 }
 
-function showDetail(value) {
-	title.value = "修改成本";
-	detailData.value = value;
+async function showDetail(value) {
+	title.value = "修改款号";
+	detailData.value = await getModelDetail({ sku_id: value.id });
+	skuIds.value = (detailData.value?.relevanceSku ?? []).map((item) => item.id);
+	const res = await getLinkSku({ sku_id: value.id });
+	linkSkuData.value = res.sort((a, b) => b.top - a.top);
 	dialogVisible.value = true;
 }
 
-async function onSaveData(data) {
+async function onSaveData() {
+	if (!detailData.value.name) {
+		ElMessage({
+			message: "请输入款号名称",
+			type: "warning",
+		});
+		return;
+	}
+	// if (!detailData.value.shopId) {
+	//   ElMessage({
+	//     message: "请选择所属店铺",
+	//     type: 'warning',
+	//   })
+	//   return
+	// }
 	try {
-		const res = await updateCost(data);
+		const res = await updateModel({
+			...detailData.value,
+			relevanceIds: skuIds.value,
+		});
 		ElMessage({
 			message: res?.message ?? "操作成功",
 			type: "success",
 		});
 		detailData.value = {};
+		skuIds.value = [];
 		dialogVisible.value = false;
 		getList();
 	} catch (error) {}
@@ -159,7 +220,7 @@ function handleSizeChange(val) {
 }
 
 async function getList() {
-	const res = await getCostList({
+	const res = await getModelList({
 		current: currentPage.value,
 		...formInline.value,
 		...params.value,
@@ -173,15 +234,9 @@ function handleSelectionChange(val) {
 }
 
 async function onHandleAction() {
-	if (!multipleSelection.value.length) {
-		ElMessage({
-			message: "请选择需要操作的数据",
-			type: "warning",
-		});
-		return;
-	}
+	await ElMessageBox.confirm("确认删除?", "提示");
 	const ids = multipleSelection.value.map((item) => item.id);
-	const res = await deleteCost({ idList: ids });
+	const res = await deleteModel({ idList: ids });
 	ElMessage({
 		message: res?.message ?? "操作成功",
 		type: "success",
@@ -191,14 +246,14 @@ async function onHandleAction() {
 
 async function init() {
 	getList();
-	costSelectData.value = await getCostTypeSelect();
+	shopSelectData.value = await getShopSelect();
 }
 
 init();
 </script>
 
 <style lang="scss" scoped>
-.cost {
+.model {
 	.w190 {
 		width: 190px;
 	}

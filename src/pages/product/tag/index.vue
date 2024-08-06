@@ -1,25 +1,23 @@
 <template>
-	<div class="cost">
+	<div class="tag">
 		<div class="search gutter">
 			<el-form :inline="true" :model="formInline" class="demo-form-inline">
-				<el-form-item label="衣服种类">
-					<el-select v-model="formInline.cost_type" class="w190" clearable>
+				<el-form-item label="标签名称">
+					<el-input
+						v-model="formInline.tag_name"
+						placeholder="请输入标签名称"
+						clearable
+					/>
+				</el-form-item>
+				<el-form-item label="标签类型">
+					<el-select v-model="formInline.tag_type" class="w190" clearable>
 						<el-option
-							v-for="item in costSelectData"
+							v-for="item in tagTypeData"
 							:label="item.value"
 							:value="item.key"
 							:key="item.key"
 						/>
 					</el-select>
-				</el-form-item>
-				<el-form-item label="时间">
-					<el-date-picker
-						v-model="timeRange"
-						type="datetimerange"
-						value-format="YYYY-MM-DD HH:mm:ss"
-						placeholder=""
-						clearable
-					/>
 				</el-form-item>
 				<el-form-item>
 					<el-button type="primary" @click="onQuery">查询</el-button>
@@ -39,11 +37,8 @@
 				<el-table-column type="selection" width="55" />
 				<!-- <el-table-column prop="name"
           label="产品名称" /> -->
-				<el-table-column prop="type" label="衣服种类" />
-				<el-table-column prop="price" label="成本" />
-				<el-table-column prop="exchangeRate" label="汇率" />
-				<el-table-column prop="startTime" label="开始时间" />
-				<el-table-column prop="endTime" label="结束时间" />
+				<el-table-column prop="tagName" label="标签名称" />
+				<el-table-column prop="tagType" label="标签类型" />
 			</el-table>
 		</div>
 		<div class="action">
@@ -67,36 +62,59 @@
 			</div>
 		</div>
 		<el-dialog v-model="dialogVisible" :title="title" width="400" center>
-			<costDetail
-				:data="detailData"
-				:costSelectData="costSelectData"
-				@save="onSaveData"
-			/>
+			<el-form :model="detailData" label-width="100">
+				<el-form-item label="标签名称" required>
+					<el-input
+						v-model="detailData.tagName"
+						placeholder="请输入标签名称"
+						clearable
+					/>
+				</el-form-item>
+				<el-form-item label="标签类型" required>
+					<el-select v-model="detailData.tagType" class="w190" clearable>
+						<el-option
+							v-for="item in tagTypeData"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
+				</el-form-item>
+			</el-form>
+			<template #footer>
+				<div class="dialog-action">
+					<el-button type="primary" @click="onSaveData">确认</el-button>
+					<el-button @click="dialogVisible = false">取消</el-button>
+				</div>
+			</template>
 		</el-dialog>
 	</div>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { ElMessage } from "element-plus";
-import costDetail from "./costDetail.vue";
-import {
-	getCostTypeSelect,
-	getCostList,
-	deleteCost,
-	updateCost,
-} from "@/network/api";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { getTagList, getTagDetail, deleteTag, updateTag } from "@/network/api";
+import { getTagTypeSelect } from "@/network/selectApi";
 
 const formInline = ref({});
 const currentPage = ref(1);
 const totalPage = ref(0);
 const multipleTableRef = ref();
 const multipleSelection = ref([]);
-const timeRange = ref([]);
-const title = ref("新增成本");
+const title = ref("新增标签");
 const dialogVisible = ref(false);
 const detailData = ref({});
-const costSelectData = ref([]);
+const tagTypeData = ref([
+	{
+		value: "链接",
+		key: "ITEM",
+	},
+	{
+		value: "图片",
+		key: "PHOTO",
+	},
+]);
 
 const params = ref({
 	size: 10,
@@ -105,20 +123,20 @@ const params = ref({
 const tableData = ref([]);
 
 function onClickAdd() {
-	title.value = "新增成本";
+	title.value = "新增标签";
 	detailData.value = {};
 	dialogVisible.value = true;
 }
 
-function showDetail(value) {
-	title.value = "修改成本";
-	detailData.value = value;
+async function showDetail(value) {
+	title.value = "修改标签";
+	detailData.value = await getTagDetail({ tag_id: value.id });
 	dialogVisible.value = true;
 }
 
-async function onSaveData(data) {
+async function onSaveData() {
 	try {
-		const res = await updateCost(data);
+		const res = await updateTag(detailData.value);
 		ElMessage({
 			message: res?.message ?? "操作成功",
 			type: "success",
@@ -131,19 +149,11 @@ async function onSaveData(data) {
 
 function onQuery() {
 	currentPage.value = 1;
-	if (timeRange.value && timeRange.value.length) {
-		params.value.start_time = timeRange.value[0];
-		params.value.end_time = timeRange.value[1];
-	} else {
-		delete params.value.start_time;
-		delete params.value.end_time;
-	}
 	getList();
 }
 
 function reset() {
 	formInline.value = {};
-	timeRange.value = [];
 	onQuery();
 }
 
@@ -159,7 +169,7 @@ function handleSizeChange(val) {
 }
 
 async function getList() {
-	const res = await getCostList({
+	const res = await getTagList({
 		current: currentPage.value,
 		...formInline.value,
 		...params.value,
@@ -173,15 +183,9 @@ function handleSelectionChange(val) {
 }
 
 async function onHandleAction() {
-	if (!multipleSelection.value.length) {
-		ElMessage({
-			message: "请选择需要操作的数据",
-			type: "warning",
-		});
-		return;
-	}
+	await ElMessageBox.confirm("确认删除?", "提示");
 	const ids = multipleSelection.value.map((item) => item.id);
-	const res = await deleteCost({ idList: ids });
+	const res = await deleteTag({ idList: ids });
 	ElMessage({
 		message: res?.message ?? "操作成功",
 		type: "success",
@@ -191,14 +195,13 @@ async function onHandleAction() {
 
 async function init() {
 	getList();
-	costSelectData.value = await getCostTypeSelect();
+	tagTypeData.value = await getTagTypeSelect();
 }
-
 init();
 </script>
 
 <style lang="scss" scoped>
-.cost {
+.tag {
 	.w190 {
 		width: 190px;
 	}

@@ -27,6 +27,11 @@ export function getProductList(param) {
   return http.get(`${resquest}/product/productList`, param)
 }
 
+// 刷新等级
+export function refreshLevel(param) {
+  return http.get(`${resquest}/product/refreshGrade`, param)
+}
+
 // 刷新产品信息
 export function refreshProducts(param) {
   return http.post(`${resquest}/product/refreshProducts`, param)
@@ -45,6 +50,11 @@ export function getStatusSelect(param) {
 // 产品详情
 export function getProductDetail(param) {
   return http.get(`${resquest}/product/info`, param)
+}
+
+// 产品款式信息
+export function getModel(param) {
+  return http.get(`${resquest}/model/getModel`, param)
 }
 
 // 日志列表
@@ -80,6 +90,26 @@ export function getOrderStatusSelect(param) {
 // 订单详情
 export function getOrderDetail(param) {
   return http.get(`${resquest}/order/info`, param)
+}
+
+// 刷新订单信息
+export function refreshOrders(param) {
+  return http.post(`${resquest}/order/refreshOrders`, param)
+}
+
+// 订单货物及数量统计信息
+export function getOrderItem(param) {
+  return http.get(`${resquest}/orderItem/getOrderItem`, param)
+}
+
+// 物流信息
+export function getTrackingInfo(param) {
+  return http.get(`${resquest}/trackingInfo/getTrackingInfo`, param)
+}
+
+// 订单调整信息
+export function getPayoutInfo(param) {
+  return http.get(`${resquest}/payoutInfo/getPayoutInfo`, param)
 }
 
 // 更新店铺状态
@@ -143,4 +173,108 @@ export function deleteLevel(data) {
   return http.post(`${resquest}/rule/delete`, data)
 }
 
+// 获取标签列表
+export function getTagList(data) {
+  return http.get(`${resquest}/tag/tagList`, data)
+}
+
+// 根据 id 获取标签
+export function getTagDetail(data) {
+  return http.get(`${resquest}/tag/getTag`, data)
+}
+
+// 根据 id 删除标签
+export function deleteTag(data) {
+  return http.post(`${resquest}/tag/delete`, data)
+}
+
+// 标签新增或修改
+export function updateTag(data) {
+  return http.post(`${resquest}/tag/saveOrUpdate`, data)
+}
+
+// 获取款号列表
+export function getModelList(data) {
+  return http.get(`${resquest}/sku/skuList`, data)
+}
+
+// 根据 id 获取款号
+export function getModelDetail(data) {
+  return http.get(`${resquest}/sku/getSkuInfo`, data)
+}
+
+// 根据 id 获取关联款号
+export function getLinkSku(data) {
+  return http.get(`${resquest}/sku/skuStatistics`, data)
+}
+
+// 根据 id 删除款号
+export function deleteModel(data) {
+  return http.post(`${resquest}/sku/delete`, data)
+}
+
+// 款号新增或修改
+export function updateModel(data) {
+  return http.post(`${resquest}/sku/save`, data)
+}
+
+// 图案列表
+export function getPatternList(data) {
+  return http.get(`${resquest}/photo/photoList`, data)
+}
+
+// 获取详情
+export function getPatternDetail(data) {
+  return http.get(`${resquest}/photo/getPhotoInfo`, data)
+}
+
+// 根据 id 删除图案
+export function deletePattern(data) {
+  return http.post(`${resquest}/photo/delete`, data)
+}
+
+// 图案新增或修改
+export function updatePattern(data) {
+  return http.post(`${resquest}/photo/save`, data)
+}
+
+// 刷新图案等级
+export function refreshPhoto(param) {
+  return http.get(`${resquest}/photo/refreshGrade`, param)
+}
+
+
+export function uploadImg(data) {
+  return http.post(`${resquest}/photo/upload`, data, { "Content-Type": "multipart/form-data" })
+}
+
+// 产品详情保存标签
+export function saveTagList(data) {
+  return http.post(`${resquest}/product/saveTag`, data)
+}
+
+// 产品表现详细信息
+export function getExpressionDetail(param) {
+  return http.get(`${resquest}/product/getProductExpressionInfo`, param)
+}
+
+// 分类列表
+export function getCategoryList(param) {
+  return http.get(`${resquest}/category/categoryList`, param)
+}
+
+// 分类编辑
+export function saveCategory(data) {
+  return http.post(`${resquest}/category/saveOrUpdate`, data)
+}
+
+// 活动表现详细信息
+export function getActiveDetail(param) {
+  return http.get(`${resquest}/product/getActivityInfo`, param)
+}
+
+// 获取上传图片id
+export function getUploadId(param) {
+  return http.get(`${resquest}/photo/getUploadId`, param)
+}
 

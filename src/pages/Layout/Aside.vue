@@ -15,7 +15,8 @@
       <el-menu :default-active="activeMenu"
         class="el-menu-vertical-demo"
         :collapse="!expand"
-        :router='true'>
+        :router='true'
+        :unique-opened='true'>
         <el-sub-menu index="1">
           <template #title>
             <el-icon>
@@ -33,8 +34,12 @@
             </el-icon>
             <span>产品</span>
           </template>
-          <el-menu-item index="/product">产品列表</el-menu-item>
+          <el-menu-item index="/product">链接列表</el-menu-item>
+          <el-menu-item index="/pattern">图案列表</el-menu-item>
+          <el-menu-item index="/model">款号列表</el-menu-item>
           <el-menu-item index="/rule">等级列表</el-menu-item>
+          <el-menu-item index="/tag">标签列表</el-menu-item>
+          <el-menu-item index="/category">分类列表</el-menu-item>
           <el-menu-item index="/logList">日志</el-menu-item>
         </el-sub-menu>
         <el-sub-menu index="3">

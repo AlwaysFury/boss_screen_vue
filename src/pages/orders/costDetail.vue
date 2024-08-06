@@ -27,7 +27,7 @@
           class="w190"
           placeholder="请选择开始时间"
           type="datetime"
-          value-format="YYYY-MM-DD hh:mm:ss"
+          value-format="YYYY-MM-DD HH:mm:ss"
           clearable />
       </el-form-item>
       <el-form-item label="结束时间">
@@ -35,7 +35,7 @@
           class="w190"
           placeholder="请选择结束时间"
           type="datetime"
-          value-format="YYYY-MM-DD hh:mm:ss"
+          value-format="YYYY-MM-DD HH:mm:ss"
           clearable />
       </el-form-item>
     </el-form>
