@@ -197,6 +197,7 @@ async function init() {
 init();
 </script>
 
+<<<<<<< HEAD
 <style lang="scss" scoped>
 .cost {
 	.w190 {
@@ -211,3 +212,19 @@ init();
 	}
 }
 </style>
+=======
+<style lang='scss' scoped>
+.cost {
+  .w190 {
+    width: 190px;
+  }
+  .gutter {
+    margin-bottom: 20px;
+  }
+  .action {
+    display: flex;
+    justify-content: space-between;
+  }
+}
+</style>
+>>>>>>> d212d9e1eb6b8a410a636f42203376b48577c6cf

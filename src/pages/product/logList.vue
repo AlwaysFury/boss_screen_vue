@@ -200,6 +200,7 @@ async function onDelete() {
 getList();
 </script>
 
+<<<<<<< HEAD
 <style scoped lang="scss">
 .logList {
 	width: 100%;
@@ -239,3 +240,37 @@ getList();
 	}
 }
 </style>
+=======
+<style scoped lang='scss'>
+.logList {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  .content {
+    flex: 1;
+    padding: 10px 30px 0 0;
+    overflow: auto;
+    .title {
+      display: flex;
+      align-items: center;
+      h4 {
+        margin: 0 20px 0 0;
+      }
+    }
+  }
+  .action {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
+  }
+  .w190 {
+    width: 190px;
+  }
+  .time-item {
+    cursor: pointer;
+  }
+}
+</style>
+>>>>>>> d212d9e1eb6b8a410a636f42203376b48577c6cf
