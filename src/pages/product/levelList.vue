@@ -122,7 +122,7 @@
 							<el-form-item label="权重" label-width="55" required>
 								<el-input-number
 									v-model="detailData.weight"
-									min="1"
+									:min="1"
 									class="w190"
 									placeholder="请输入权重"
 									clearable
@@ -488,6 +488,7 @@ async function onSelectChange(data) {
 	const res = await getLevelDetail({ rule_id: data.id });
 	detailData.value = res;
 	replaceRulesValues(res.rule);
+	console.log("---rule----", rules.value);
 	dialogVisible.value = true;
 }
 
@@ -568,7 +569,7 @@ function initData() {
 }
 
 // 详情数据处理
-function replaceRulesValues(ruleRequest) {
+async function replaceRulesValues(ruleRequest) {
 	for (const key in ruleRequest) {
 		if (ruleRequest[key].startTime) {
 			rules.value[key].startTime = ruleRequest[key].startTime;
@@ -590,7 +591,8 @@ function replaceRulesValues(ruleRequest) {
 		}
 		const item = ruleRequest[key];
 		if (item.value) {
-			rules.value[key].value = item.value;
+			// 不知道数组类型的下拉选项会是proxy
+			rules.value[key].value = await item.value;
 		}
 	}
 }
@@ -655,6 +657,9 @@ init();
 	.dialogContent {
 		height: 500px;
 		overflow-y: scroll;
+	}
+	:deep(.el-input) {
+		width: 190px;
 	}
 }
 </style>

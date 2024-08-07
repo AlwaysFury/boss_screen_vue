@@ -35,10 +35,10 @@
 					/>
 				</el-form-item>
 				<el-form-item label="最小销量">
-					<el-input-number v-model="formInline.min_value" min="0" />
+					<el-input-number v-model="formInline.min_value" :min="0" />
 				</el-form-item>
 				<el-form-item label="最大销量">
-					<el-input-number v-model="formInline.max_value" min="0" />
+					<el-input-number v-model="formInline.max_value" :min="0" />
 				</el-form-item>
 				<el-form-item label="时间">
 					<el-date-picker
