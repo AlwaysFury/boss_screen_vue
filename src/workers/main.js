@@ -4,7 +4,7 @@ import axios from "axios";
 
 const UPLOAD_URL = "/api/photo/uploadChunk"
 
-const CHUNK_SIZE = 1024 * 1024 * 5 // 分片大小5M
+const CHUNK_SIZE = 1024 * 1024 * 2 // 分片大小5M
 const KERNEL_COUNT = navigator.hardwareConcurrency || 4 // 内核数量，如果取不到则为4
 
 /**
@@ -117,7 +117,8 @@ export async function uploadFile(file, uploadId) {
   }
   const fileName = file.name;
   try {
-    res.map((chunk, index) => {
+    for (let index = 0; index < res.length; index++) {
+      const chunk = res[index]
       const data = new FormData();
       data.append('filename', fileName)
       data.append('identifier', chunk.hash)
@@ -126,14 +127,9 @@ export async function uploadFile(file, uploadId) {
       data.append("file", new File([chunk.blob], fileName));
       data.append('chunkNumber', index + 1);
       data.append("uploadId", uploadId);
-      axios.post(UPLOAD_URL, data)
-        .then(() => {
-          console.log("上传分片成功")
-        })
-        .catch((error) => {
-          console.log("上传分片失败", error)
-        });
-    })
+      await axios.post(UPLOAD_URL, data)
+    }
+
   } catch (e) {
     console.log("文件处理失败")
   }

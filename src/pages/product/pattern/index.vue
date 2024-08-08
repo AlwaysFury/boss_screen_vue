@@ -101,13 +101,14 @@
 		</div>
 		<div class="action">
 			<div class="left">
-				<el-button @click="onClickAdd">新增</el-button>
+				<!-- <el-button @click="onClickAdd">新增</el-button> -->
 				<el-button type="primary" :disabled="refreshing" @click="sameLevel"
 					>同步等级</el-button
 				>
 				<el-button :disabled="!multipleSelection.length" @click="onHandleAction"
 					>删除</el-button
 				>
+				<el-button @click="openPage">上传</el-button>
 			</div>
 			<div class="right">
 				<el-pagination
@@ -142,8 +143,9 @@
 								:on-remove="handleRemove"
 								:on-success="handleUploadSuccess"
 								:on-preview="handlePictureCardPreview"
-								:disabled="dialogType == 'detail'"
+								disabled
 							>
+								<!-- :disabled="dialogType == 'detail'" -->
 								<el-icon v-if="fileList.length == 0">
 									<Plus />
 								</el-icon>
@@ -548,6 +550,11 @@ async function sameLevel() {
 // 避免触发详情
 function chooseImage() {
 	return;
+}
+
+function openPage() {
+	const url = `${process.env.BASE_URL}aliyunOSS/index.html`;
+	window.open(url, "_blank"); // 在新标签页中打开
 }
 
 init();
