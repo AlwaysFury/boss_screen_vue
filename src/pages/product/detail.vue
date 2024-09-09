@@ -351,13 +351,11 @@ function onConfirmTag(data) {
 }
 
 async function onSaveTag() {
-	if (detailData.value?.tagList?.length) {
-		await saveTagList({
-			tagNameList: detailData.value.tagList.map((item) => item.tagName),
-			id: props.ItemId,
-		});
-		originTagList.value = [];
-	}
+	await saveTagList({
+		tagNameList: detailData.value.tagList.map((item) => item.tagName),
+		id: props.ItemId,
+	});
+	originTagList.value = [];
 	action.value = "1";
 }
 

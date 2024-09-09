@@ -6,7 +6,7 @@
 					<el-select v-model="formInline.cost_type" class="w190" clearable>
 						<el-option
 							v-for="item in costSelectData"
-							:label="item.value"
+							:label="item.key"
 							:value="item.key"
 							:key="item.key"
 						/>
@@ -78,14 +78,10 @@
 
 <script setup>
 import { ref } from "vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import costDetail from "./costDetail.vue";
-import {
-	getCostTypeSelect,
-	getCostList,
-	deleteCost,
-	updateCost,
-} from "@/network/api";
+import { getCostList, deleteCost, updateCost } from "@/network/api";
+import { getCostTypeSelect } from "@/network/selectApi";
 
 const formInline = ref({});
 const currentPage = ref(1);
@@ -173,13 +169,7 @@ function handleSelectionChange(val) {
 }
 
 async function onHandleAction() {
-	if (!multipleSelection.value.length) {
-		ElMessage({
-			message: "请选择需要操作的数据",
-			type: "warning",
-		});
-		return;
-	}
+	await ElMessageBox.confirm("确认删除?");
 	const ids = multipleSelection.value.map((item) => item.id);
 	const res = await deleteCost({ idList: ids });
 	ElMessage({
@@ -197,7 +187,6 @@ async function init() {
 init();
 </script>
 
-<<<<<<< HEAD
 <style lang="scss" scoped>
 .cost {
 	.w190 {
@@ -212,19 +201,3 @@ init();
 	}
 }
 </style>
-=======
-<style lang='scss' scoped>
-.cost {
-  .w190 {
-    width: 190px;
-  }
-  .gutter {
-    margin-bottom: 20px;
-  }
-  .action {
-    display: flex;
-    justify-content: space-between;
-  }
-}
-</style>
->>>>>>> d212d9e1eb6b8a410a636f42203376b48577c6cf

@@ -63,6 +63,12 @@ const routes = [
         meta: { title: "分类列表" }
       },
       {
+        path: "/clothes",
+        name: "clothes",
+        component: () => import('@/pages/product/clothes/index.vue'),
+        meta: { title: "衣服种类列表" }
+      },
+      {
         path: "/logList",
         name: "logList",
         component: () => import('@/pages/product/logList.vue'),
@@ -84,7 +90,7 @@ const routes = [
         path: "/cost",
         name: "cost",
         component: () => import('@/pages/orders/cost.vue'),
-        meta: { title: "订单列表" }
+        meta: { title: "成本列表" }
       },
     ]
   }

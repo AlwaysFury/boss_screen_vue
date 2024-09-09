@@ -63,6 +63,18 @@
 							<span class="form-item-value">{{ baseInfo.cancelReason }}</span>
 						</el-form-item>
 					</el-col>
+					<el-col :span="24">
+						<el-form-item label="标签">
+							<template #default>
+								<el-tag
+									v-for="tag in baseInfo.tagNameList"
+									type="primary"
+									:key="tag"
+									>{{ tag }}</el-tag
+								>
+							</template>
+						</el-form-item>
+					</el-col>
 				</el-row>
 			</el-form>
 			<el-divider />

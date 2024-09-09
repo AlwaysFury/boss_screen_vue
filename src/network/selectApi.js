@@ -27,3 +27,28 @@ export function getPhotoTagSelect(param) {
 export function getTagTypeSelect(param) {
   return http.get(`${resquest}/tag/typeSelect`, param)
 }
+
+// 衣服种类
+export function getCostTypeSelect(data) {
+  return http.get(`${resquest}/clothesType/clothesTypeSelect`, data)
+}
+
+// 订单状态
+export function getOrderStatusSelect(data) {
+  return http.get(`${resquest}/order/statusSelect`, data)
+}
+
+// 物流状态
+export function getLogisticsSelect(data) {
+  return http.get(`${resquest}/order/logisticsStatusSelect`, data)
+}
+
+// 产品id
+export function getProductIdSelect(data) {
+  return http.get(`${resquest}/product/getProductIdSelect`, data)
+}
+
+// 款号
+export function getStyleNoSelect(data) {
+  return http.get(`${resquest}/sku/getSkuSelect`, data)
+}

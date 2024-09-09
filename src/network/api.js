@@ -1,4 +1,5 @@
 import http from '../utils/http';
+import axios from "axios";
 
 /** * @parms resquest 请求地址 例如：http://197.82.15.15:8088/request/... * @param '/testIp'代表vue-cil中config，index.js中配置的代理 */
 let resquest = "/api"
@@ -82,11 +83,6 @@ export function getOrderList(param) {
   return http.get(`${resquest}/order/orderList`, param)
 }
 
-// 单选框获取订单状态
-export function getOrderStatusSelect(param) {
-  return http.get(`${resquest}/order/statusSelect`, param)
-}
-
 // 订单详情
 export function getOrderDetail(param) {
   return http.get(`${resquest}/order/info`, param)
@@ -130,11 +126,6 @@ export function updateAccountStatus(data) {
 // 成本列表
 export function getCostList(data) {
   return http.get(`${resquest}/cost/costList`, data)
-}
-
-// 单选框获取成本类型
-export function getCostTypeSelect(data) {
-  return http.get(`${resquest}/cost/costTypeSelect`, data)
 }
 
 // 成本新增或修改
@@ -278,3 +269,72 @@ export function getUploadId(param) {
   return http.get(`${resquest}/photo/getUploadId`, param)
 }
 
+// 批量编辑标签
+export function batchSaveTag(data) {
+  return http.post(`${resquest}/photo/saveBatchTag`, data)
+}
+
+// 导出订单
+export function exportOrder(data) {
+  axios.post(`${resquest}/order/export`, data, { responseType: 'blob' }).then((response) => {
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', '订单列表.xls');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  })
+  // return http.post(`${resquest}/order/export`, data, { responseType: 'blob' })
+}
+
+// 导出产品
+export function exportProduct(data) {
+  axios.post(`${resquest}/product/export`, data, { responseType: 'blob' }).then((response) => {
+    const url = window.URL.createObjectURL(new Blob([response.data]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', '产品信息.xls');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  })
+  // return http.post(`${resquest}/order/export`, data, { responseType: 'blob' })
+}
+
+// 刷新标签
+export function refreshTag(param) {
+  return http.get(`${resquest}/order/refreshTag`, param)
+}
+
+// 衣服种类列表
+export function getClothingList(param) {
+  return http.get(`${resquest}/clothesType/clothesTypeList`, param)
+}
+
+// 编辑衣服种类
+export function saveClothing(data) {
+  return http.post(`${resquest}/clothesType/saveOrUpdate`, data)
+}
+
+// 删除衣服种类
+export function deleteClothing(data) {
+  return http.post(`${resquest}/clothesType/delete`, data)
+}
+
+// 批量编辑标签
+export function batchSaveProductTag(data) {
+  return http.post(`${resquest}/product/saveBatchTag`, data)
+}
+
+// 导入产品标签
+export function importProductTag(data) {
+  return http.post(`${resquest}/product/saveBatchTagByExcel`, data, { 'Content-Type': 'multipart/form-data' })
+}
+
+// 导入图案标签
+export function importPatternTag(data) {
+  return http.post(`${resquest}/photo/saveBatchTagByExcel`, data)
+}

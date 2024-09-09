@@ -6,7 +6,7 @@ module.exports = defineConfig({
   devServer: {
     proxy: { // 代理配置
       '/api': { // 匹配所有以 '/api' 开头的请求
-        target: 'http://120.79.52.53:8992', // 目标服务器的基础URL
+        target: 'http://120.76.157.173:8992', // 目标服务器的基础URL
         changeOrigin: true, // 是否改变源，开启后服务器接收到的请求头中Host为target的值
         pathRewrite: {
           '^/api': ''

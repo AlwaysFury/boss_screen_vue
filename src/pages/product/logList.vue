@@ -7,6 +7,15 @@
 				class="demo-form-inline"
 				label-width="auto"
 			>
+				<el-form-item label="日志类型">
+					<el-select v-model="formInline.opt_type" class="w190" clearable>
+						<el-option label="系统日志" value="系统日志" />
+						<el-option label="用户日志" value="用户日志" />
+					</el-select>
+				</el-form-item>
+				<el-form-item label="日志内容">
+					<el-input v-model="formInline.opt_desc" class="w190" />
+				</el-form-item>
 				<el-form-item label="开始时间">
 					<el-date-picker
 						v-model="formInline.start_time"
@@ -26,12 +35,6 @@
 						placeholder="请选择结束时间"
 						clearable
 					/>
-				</el-form-item>
-				<el-form-item label="日志类型">
-					<el-select v-model="formInline.opt_type" class="w190" clearable>
-						<el-option label="系统日志" value="系统日志" />
-						<el-option label="用户日志" value="用户日志" />
-					</el-select>
 				</el-form-item>
 				<el-form-item>
 					<el-button type="primary" @click="onQuery">查询</el-button>
@@ -241,36 +244,36 @@ getList();
 }
 </style>
 =======
-<style scoped lang='scss'>
+<style scoped lang="scss">
 .logList {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  .content {
-    flex: 1;
-    padding: 10px 30px 0 0;
-    overflow: auto;
-    .title {
-      display: flex;
-      align-items: center;
-      h4 {
-        margin: 0 20px 0 0;
-      }
-    }
-  }
-  .action {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 10px;
-  }
-  .w190 {
-    width: 190px;
-  }
-  .time-item {
-    cursor: pointer;
-  }
+	width: 100%;
+	height: 100%;
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	.content {
+		flex: 1;
+		padding: 10px 30px 0 0;
+		overflow: auto;
+		.title {
+			display: flex;
+			align-items: center;
+			h4 {
+				margin: 0 20px 0 0;
+			}
+		}
+	}
+	.action {
+		display: flex;
+		justify-content: space-between;
+		margin-top: 10px;
+	}
+	.w190 {
+		width: 190px;
+	}
+	.time-item {
+		cursor: pointer;
+	}
 }
 </style>
 >>>>>>> d212d9e1eb6b8a410a636f42203376b48577c6cf

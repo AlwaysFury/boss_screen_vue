@@ -194,6 +194,8 @@
 											clearable
 											multiple
 											filterable
+											remote
+											:remote-method="remoteMethod"
 										>
 											<el-option
 												v-for="item in tagSelectData"
@@ -409,19 +411,13 @@ const detailData = ref({
 });
 const rules = ref();
 const title = ref("新增等级");
-// 标签下拉选择数据
-const tagsForPhoto = ref([]);
-const tagsForItem = ref([]);
 
 const params = ref({
 	size: 10,
 });
 
-const tagSelectData = computed(() => {
-	return detailData.value.type == "ITEM"
-		? tagsForItem.value
-		: tagsForPhoto.value;
-});
+// 标签下拉选择数据
+const tagSelectData = ref([]);
 
 watch(
 	() => detailData.value.type,
@@ -604,13 +600,13 @@ function processBeforeUpload() {
 		const item = rules.value[key];
 		let obj = {};
 
-		if (item.value) obj.value = item.value;
+		if (item.value || item.value === 0) obj.value = item.value;
 		if (item.startTime) obj.startTime = item.startTime;
 		if (item.endTime) obj.endTime = item.endTime;
-		if (item.minPrice) obj.minPrice = item.minPrice;
-		if (item.maxPrice) obj.maxPrice = item.maxPrice;
-		if (item.minValue) obj.minValue = item.minValue;
-		if (item.maxValue) obj.maxValue = item.maxValue;
+		if (item.minPrice || item.minPrice === 0) obj.minPrice = item.minPrice;
+		if (item.maxPrice || item.maxPrice === 0) obj.maxPrice = item.maxPrice;
+		if (item.minValue || item.minValue === 0) obj.minValue = item.minValue;
+		if (item.maxValue || item.maxValue === 0) obj.maxValue = item.maxValue;
 
 		if (
 			(detailData.value.type === "ITEM" && ["itemSku"].includes(key)) ||
@@ -630,9 +626,20 @@ async function init() {
 	getList();
 	categorySelectData.value = await getCategorySelect();
 	statusSelectData.value = await getStatusSelect();
-	tagsForItem.value = await getProductTagSelect();
-	tagsForPhoto.value = await getPhotoTagSelect();
 	tagTypeList.value = await getTagTypeSelect();
+}
+
+// 远程搜索
+async function remoteMethod(tag_name) {
+	if (!tag_name) {
+		tagSelectData.value = [];
+	} else {
+		const fn =
+			detailData.value.type === "ITEM"
+				? getProductTagSelect
+				: getPhotoTagSelect;
+		tagSelectData.value = await fn({ tag_name });
+	}
 }
 init();
 </script>

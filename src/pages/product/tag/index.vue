@@ -62,15 +62,20 @@
 			</div>
 		</div>
 		<el-dialog v-model="dialogVisible" :title="title" width="400" center>
-			<el-form :model="detailData" label-width="100">
-				<el-form-item label="标签名称" required>
+			<el-form
+				:model="detailData"
+				label-width="100"
+				:rules="rules"
+				ref="editFormRef"
+			>
+				<el-form-item label="标签名称" prop="tagName">
 					<el-input
 						v-model="detailData.tagName"
 						placeholder="请输入标签名称"
 						clearable
 					/>
 				</el-form-item>
-				<el-form-item label="标签类型" required>
+				<el-form-item label="标签类型" prop="tagType">
 					<el-select v-model="detailData.tagType" class="w190" clearable>
 						<el-option
 							v-for="item in tagTypeData"
@@ -80,10 +85,50 @@
 						/>
 					</el-select>
 				</el-form-item>
+				<el-form-item
+					label="订单状态"
+					v-if="detailData.tagType === 'ORDER'"
+					prop="orderStatus"
+				>
+					<el-select
+						v-model="detailData.orderStatus"
+						multiple
+						class="w190"
+						clearable
+					>
+						<el-option
+							v-for="item in orderSelect"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
+				</el-form-item>
+				<el-form-item
+					label="物流状态"
+					prop="logisticsStatus"
+					v-if="detailData.tagType === 'ORDER'"
+				>
+					<el-select
+						v-model="detailData.logisticsStatus"
+						multiple
+						class="w190"
+						clearable
+					>
+						<el-option
+							v-for="item in logisticsSelect"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
+				</el-form-item>
 			</el-form>
 			<template #footer>
 				<div class="dialog-action">
-					<el-button type="primary" @click="onSaveData">确认</el-button>
+					<el-button type="primary" @click="onSaveData(editFormRef)"
+						>确认</el-button
+					>
 					<el-button @click="dialogVisible = false">取消</el-button>
 				</div>
 			</template>
@@ -92,10 +137,14 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, reactive } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { getTagList, getTagDetail, deleteTag, updateTag } from "@/network/api";
-import { getTagTypeSelect } from "@/network/selectApi";
+import {
+	getTagTypeSelect,
+	getOrderStatusSelect,
+	getLogisticsSelect,
+} from "@/network/selectApi";
 
 const formInline = ref({});
 const currentPage = ref(1);
@@ -105,16 +154,22 @@ const multipleSelection = ref([]);
 const title = ref("新增标签");
 const dialogVisible = ref(false);
 const detailData = ref({});
-const tagTypeData = ref([
-	{
-		value: "链接",
-		key: "ITEM",
-	},
-	{
-		value: "图片",
-		key: "PHOTO",
-	},
-]);
+const tagTypeData = ref([]);
+const orderSelect = ref([]); // 订单状态
+const logisticsSelect = ref([]); // 物流状态
+
+const editFormRef = ref(null);
+
+const rules = reactive({
+	tagName: [{ required: true, message: "请输入标签名称", trigger: "blur" }],
+	tagType: [{ required: true, message: "请选择标签类型", trigger: "change" }],
+	orderStatus: [
+		{ required: true, message: "请选择订单状态", trigger: "change" },
+	],
+	logisticsStatus: [
+		{ required: true, message: "请选择物流状态", trigger: "change" },
+	],
+});
 
 const params = ref({
 	size: 10,
@@ -126,15 +181,25 @@ function onClickAdd() {
 	title.value = "新增标签";
 	detailData.value = {};
 	dialogVisible.value = true;
+	resetForm();
 }
 
 async function showDetail(value) {
 	title.value = "修改标签";
 	detailData.value = await getTagDetail({ tag_id: value.id });
 	dialogVisible.value = true;
+	resetForm();
 }
 
-async function onSaveData() {
+function resetForm() {
+	if (editFormRef.value) {
+		editFormRef.value.resetFields();
+	}
+}
+
+async function onSaveData(formEl) {
+	if (!formEl) return;
+	await formEl.validate();
 	try {
 		const res = await updateTag(detailData.value);
 		ElMessage({
@@ -196,6 +261,8 @@ async function onHandleAction() {
 async function init() {
 	getList();
 	tagTypeData.value = await getTagTypeSelect();
+	orderSelect.value = await getOrderStatusSelect();
+	logisticsSelect.value = await getLogisticsSelect();
 }
 init();
 </script>

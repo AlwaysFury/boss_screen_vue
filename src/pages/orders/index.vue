@@ -4,6 +4,7 @@
 			<el-form :inline="true" :model="formInline" class="demo-form-inline">
 				<el-form-item label="订单号">
 					<el-input
+						class="w190"
 						v-model="formInline.order_sn"
 						placeholder="请输入订单号"
 						clearable
@@ -16,8 +17,32 @@
 						clearable
 					/>
 				</el-form-item>
+				<el-form-item label="订单状态">
+					<el-select v-model="formInline.order_status" class="w190" clearable>
+						<el-option
+							v-for="item in statusSelectData"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
+				</el-form-item>
+				<el-form-item label="物流状态">
+					<el-select
+						v-model="formInline.logistics_status"
+						class="w190"
+						clearable
+					>
+						<el-option
+							v-for="item in logisticsSelectData"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
+				</el-form-item>
 				<el-form-item label="所属店铺">
-					<el-select v-model="formInline.shopId" class="w190" clearable>
+					<el-select v-model="formInline.shop_id" class="w190" clearable>
 						<el-option
 							v-for="item in shopSelectData"
 							:label="item.value"
@@ -26,10 +51,25 @@
 						/>
 					</el-select>
 				</el-form-item>
-				<el-form-item label="状态">
-					<el-select v-model="formInline.order_status" class="w190" clearable>
+				<el-form-item label="规格">
+					<el-input
+						class="w190"
+						v-model="formInline.item_skus"
+						placeholder="请输入规格"
+						clearable
+					/>
+				</el-form-item>
+				<el-form-item label="标签">
+					<el-select
+						class="w190"
+						v-model="formInline.tag_ids"
+						clearable
+						filterable
+						remote
+						:remote-method="remoteMethod"
+					>
 						<el-option
-							v-for="item in statusSelectData"
+							v-for="item in tagData"
 							:label="item.value"
 							:value="item.key"
 							:key="item.key"
@@ -69,8 +109,27 @@
           label="所属店铺" /> -->
 				<el-table-column prop="shopName" label="所属店铺" />
 				<el-table-column prop="createTime" label="创建时间" sortable="custom" />
-				<el-table-column prop="status" label="状态" />
-				<el-table-column prop="totalCount" label="衣服数量" sortable="custom" />
+				<el-table-column prop="status" label="订单状态" />
+				<el-table-column prop="logisticsStatus" label="物流状态" />
+				<el-table-column prop="finalStatus" label="最终状态" />
+				<el-table-column
+					prop="totalCount"
+					label="衣服数量"
+					width="120"
+					sortable="custom"
+				/>
+				<el-table-column prop="tagNameList" label="标签">
+					<template #default="scope">
+						<div v-if="scope.row.tagNameList && scope.row.tagNameList.length">
+							<el-tag
+								v-for="tag in scope.row.tagNameList"
+								:key="tag.id"
+								type="primary"
+								>{{ tag.name }}</el-tag
+							>
+						</div>
+					</template>
+				</el-table-column>
 				<el-table-column prop="new" label="是否为新品订单">
 					<template #default="scope">
 						<el-tag :type="scope.row.new ? 'success' : 'info'">{{
@@ -85,6 +144,13 @@
 				<!-- <el-button>等级价格填入</el-button> -->
 				<!-- <el-button>下架</el-button> -->
 				<el-button type="primary" @click="onRefresh">刷新</el-button>
+				<el-button
+					type="primary"
+					@click="onExportOrder"
+					:disabled="!multipleSelection.length"
+					>导出</el-button
+				>
+				<el-button type="primary" @click="onRefreshTag">同步标签</el-button>
 			</div>
 			<div class="right">
 				<el-pagination
@@ -124,10 +190,17 @@ import TimeSelect from "@/pages/product/components/TimeSelect.vue";
 import { ElMessage } from "element-plus";
 import {
 	getShopSelect,
-	getOrderStatusSelect,
 	getOrderList,
 	refreshOrders,
+	exportOrder,
+	refreshTag,
 } from "@/network/api";
+import {
+	getOrderStatusSelect,
+	getProductTagSelect,
+	getPhotoTagSelect,
+	getLogisticsSelect,
+} from "@/network/selectApi";
 
 const formInline = ref({});
 const currentPage = ref(1);
@@ -146,6 +219,9 @@ const statusSelectData = ref([]);
 const multipleSelection = ref([]);
 const refTable = ref(null);
 const showTimeSelect = ref(false);
+const tagData = ref([]);
+// 物流状态
+const logisticsSelectData = ref([]);
 
 function onQuery() {
 	currentPage.value = 1;
@@ -210,6 +286,7 @@ async function init() {
 	getList();
 	shopSelectData.value = await getShopSelect();
 	statusSelectData.value = await getOrderStatusSelect();
+	logisticsSelectData.value = await getLogisticsSelect();
 }
 
 // 刷新
@@ -237,6 +314,20 @@ async function onRefresh() {
 	refreshData(p);
 }
 
+async function onRefreshTag() {
+	await refreshTag();
+	ElMessage({
+		message: "刷新标签成功",
+		type: "success",
+	});
+}
+
+async function onExportOrder() {
+	exportOrder({
+		orderSns: multipleSelection.value.map((item) => item.orderSn),
+	});
+}
+
 async function onConfirmTimeRefresh(timeRange) {
 	const p = {
 		...timeRange,
@@ -249,6 +340,17 @@ async function onConfirmTimeRefresh(timeRange) {
 async function refreshData(params) {
 	await refreshOrders(params);
 	getList();
+}
+
+// 远程搜索
+async function remoteMethod(tag_name) {
+	if (!tag_name) {
+		tagData.value = [];
+	} else {
+		const res1 = await getProductTagSelect({ tag_name });
+		const res2 = await getPhotoTagSelect({ tag_name });
+		tagData.value = res1.concat(res2);
+	}
 }
 
 init();

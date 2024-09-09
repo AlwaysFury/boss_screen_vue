@@ -8,11 +8,22 @@
 				label-width="80"
 			>
 				<el-form-item label="产品id">
-					<el-input
-						v-model="formInline.item_id"
-						placeholder="请输入产品id"
+					<el-select
+						v-model="formInline.item_ids"
+						class="w190"
 						clearable
-					/>
+						multiple
+						filterable
+						remote
+						:remote-method="remoteMethod1"
+					>
+						<el-option
+							v-for="item in itemIdSelectData"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
 				</el-form-item>
 				<el-form-item label="店铺">
 					<el-select v-model="formInline.shop_id" class="w190" clearable>
@@ -45,11 +56,22 @@
 					</el-select>
 				</el-form-item>
 				<el-form-item label="款号">
-					<el-input
-						v-model="formInline.item_sku"
-						placeholder="请输入款号"
+					<el-select
+						v-model="formInline.item_skus"
+						class="w190"
 						clearable
-					/>
+						multiple
+						filterable
+						remote
+						:remote-method="remoteMethod2"
+					>
+						<el-option
+							v-for="item in styleNoSelectData"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
 				</el-form-item>
 				<el-form-item label="状态">
 					<el-select v-model="formInline.item_status" class="w190" clearable>
@@ -68,6 +90,8 @@
 						clearable
 						multiple
 						filterable
+						remote
+						:remote-method="remoteMethod3"
 					>
 						<el-option
 							v-for="item in tagsList"
@@ -99,11 +123,16 @@
 				stripe
 				highlight-current-row
 				style="width: 100%"
+				:row-key="(row) => row.id"
 				@row-click="onSelectChange"
 				@selection-change="handleSelectionChange"
 				@sort-change="onSortChange"
 			>
-				<el-table-column type="selection" width="55" />
+				<el-table-column
+					type="selection"
+					width="55"
+					:reserve-selection="true"
+				/>
 				<el-table-column
 					prop="itemId"
 					label="产品id"
@@ -144,11 +173,26 @@
 		</div>
 		<div class="action">
 			<div class="left">
-				<el-button>导出</el-button>
+				<el-button type="primary" @click="onRefresh">刷新</el-button>
+				<el-button :disabled="!multipleSelection.length" @click="onExport"
+					>导出</el-button
+				>
 				<el-button type="primary" :disabled="refreshing" @click="sameLevel"
 					>同步等级</el-button
 				>
-				<el-button type="primary" @click="onRefresh">刷新</el-button>
+				<el-button @click="showUploadDialog = true">导入标签</el-button>
+				<el-button
+					type="primary"
+					:disabled="multipleSelection.length === 0"
+					@click="onHandleAddTag"
+					>批量新增标签</el-button
+				>
+				<el-button
+					type="primary"
+					:disabled="multipleSelection.length === 0"
+					@click="onHandleClearTag"
+					>批量清空标签</el-button
+				>
 			</div>
 			<div class="right">
 				<el-pagination
@@ -170,6 +214,50 @@
 			@confirm="onConfirmTimeRefresh"
 			@cancel="showTimeSelect = false"
 		/>
+		<el-dialog
+			v-model="butchTagDialogVisible"
+			title="批量标签处理"
+			width="500"
+			:close-on-click-modal="false"
+			center
+		>
+			<div>
+				标签：
+				<el-tag
+					style="margin-right: 10px"
+					v-for="(tag, index) in butchTags"
+					:key="tag"
+					closable
+					type="primary"
+					@close="handleRemoveButchTag(index)"
+				>
+					{{ tag }}
+				</el-tag>
+				<el-button type="primary" size="small" @click="showTagDialog = true"
+					>新增</el-button
+				>
+			</div>
+			<template #footer>
+				<div class="dialog-action">
+					<el-button type="primary" @click="onSaveButchTag">确认</el-button>
+					<el-button @click="butchTagDialogVisible = false">取消</el-button>
+				</div>
+			</template>
+		</el-dialog>
+		<AddTag
+			:showTagDialog="showTagDialog"
+			@confirm="onConfirmTag"
+			@close="showTagDialog = false"
+		/>
+		<el-dialog
+			v-model="showUploadDialog"
+			title="上传"
+			width="500"
+			:close-on-click-modal="false"
+			center
+		>
+			<UploadField />
+		</el-dialog>
 	</div>
 </template>
 
@@ -177,7 +265,9 @@
 import { ref, reactive } from "vue";
 import Detail from "./detail.vue";
 import TimeSelect from "@/pages/product/components/TimeSelect.vue";
-import { ElMessage } from "element-plus";
+import AddTag from "@/pages/product/components/AddTag.vue";
+import UploadField from "@/pages/product/components/UploadField.vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
 	getShopSelect,
 	refreshLevel,
@@ -185,10 +275,14 @@ import {
 	refreshProducts,
 	getStatusSelect,
 	getProductList,
+	exportProduct,
+	batchSaveProductTag,
 } from "@/network/api";
 import {
 	getProductGradeSelect,
 	getProductTagSelect,
+	getProductIdSelect,
+	getStyleNoSelect,
 } from "@/network/selectApi";
 
 const formInline = ref({});
@@ -206,12 +300,18 @@ const tableData = ref([]);
 const shopSelectData = ref([]);
 const categorySelectData = ref([]);
 const statusSelectData = ref([]);
+const itemIdSelectData = ref([]);
+const styleNoSelectData = ref([]);
 const multipleSelection = ref([]);
 
 const refTable = ref(null);
 const refreshing = ref(false);
 const ruleList = ref([]);
 const tagsList = ref([]);
+const butchTagDialogVisible = ref(false);
+const butchTags = ref([]); // 批量处理标签显示列表
+const showTagDialog = ref(false); // 新增标签弹窗
+const showUploadDialog = ref(false); // 上传弹窗
 
 // 刷新
 const showTimeSelect = ref(false);
@@ -310,6 +410,10 @@ async function sameLevel() {
 	}
 }
 
+async function onExport() {
+	exportProduct({ itemIds: multipleSelection.value.map((item) => item.id) });
+}
+
 async function onSortChange(data) {
 	const obj = {
 		salesVolume: "salesVolume",
@@ -342,11 +446,79 @@ async function init() {
 	categorySelectData.value = await getCategorySelect();
 	statusSelectData.value = await getStatusSelect();
 	ruleList.value = await getProductGradeSelect();
-	tagsList.value = await getProductTagSelect();
 }
 
 function chooseImage() {
 	return;
+}
+
+// 批量处理标签
+async function handleRemoveButchTag(idx) {
+	butchTags.value.splice(idx, 1);
+}
+
+// 批量新增标签
+function onHandleAddTag() {
+	butchTags.value = [];
+	butchTagDialogVisible.value = true;
+}
+
+// 批量清空标签
+async function onHandleClearTag() {
+	await ElMessageBox.confirm("确认清空标签?", "提示");
+	const p = {
+		type: "delete",
+		ids: multipleSelection.value.map((item) => item.id),
+		tagNameList: [],
+	};
+	await batchSaveProductTag(p);
+	onQuery();
+}
+
+// 标签弹窗相关
+function onConfirmTag(data) {
+	const tag = data.type == "1" ? data.tagName : data.customTag;
+
+	if (!butchTags.value.includes(tag)) {
+		butchTags.value.push(tag);
+	}
+	showTagDialog.value = false;
+}
+
+async function onSaveButchTag() {
+	const p = {
+		type: "save",
+		ids: multipleSelection.value.map((item) => item.id),
+		tagNameList: butchTags.value,
+	};
+	await batchSaveProductTag(p);
+	butchTagDialogVisible.value = false;
+	onQuery();
+}
+
+// 远程搜索
+async function remoteMethod1(query) {
+	if (query) {
+		itemIdSelectData.value = await getProductIdSelect({ item_id: query });
+	} else {
+		itemIdSelectData.value = [];
+	}
+}
+
+async function remoteMethod2(query) {
+	if (query) {
+		styleNoSelectData.value = await getStyleNoSelect({ sku_name: query });
+	} else {
+		styleNoSelectData.value = [];
+	}
+}
+
+async function remoteMethod3(query) {
+	if (query) {
+		tagsList.value = await getProductTagSelect({ tag_name: query });
+	} else {
+		tagsList.value = [];
+	}
 }
 
 init();

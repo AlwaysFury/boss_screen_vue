@@ -17,6 +17,24 @@
 						/>
 					</el-select>
 				</el-form-item>
+				<el-form-item label="标签">
+					<el-select
+						v-model="formInline.tag_ids"
+						filterable
+						multiple
+						class="w190"
+						clearable
+						remote
+						:remote-method="remoteMethod"
+					>
+						<el-option
+							v-for="item in tagSelectData"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
+						/>
+					</el-select>
+				</el-form-item>
 				<el-form-item label="等级">
 					<el-select v-model="formInline.rule_grade" class="w190" clearable>
 						<el-option
@@ -40,14 +58,14 @@
 				<el-form-item label="最大销量">
 					<el-input-number v-model="formInline.max_value" :min="0" />
 				</el-form-item>
-				<el-form-item label="时间">
+				<!-- <el-form-item label="时间">
 					<el-date-picker
 						v-model="timeRange"
 						type="datetimerange"
 						value-format="YYYY-MM-DD HH:mm:ss"
 						clearable
 					/>
-				</el-form-item>
+				</el-form-item> -->
 				<el-form-item>
 					<el-button type="primary" @click="onQuery">查询</el-button>
 					<el-button @click="reset">重置</el-button>
@@ -64,7 +82,11 @@
 				@selection-change="handleSelectionChange"
 				@sort-change="onSortChange"
 			>
-				<el-table-column type="selection" width="55" />
+				<el-table-column
+					type="selection"
+					width="55"
+					:reserve-selection="true"
+				/>
 				<el-table-column prop="photoSrc" label="图案">
 					<template #default="scope">
 						<el-image
@@ -78,11 +100,23 @@
               :src="scope.row.photoSrc" /> -->
 					</template>
 				</el-table-column>
-				<el-table-column prop="photoName" label="图案名称" />
 				<el-table-column prop="skuName" label="款号" />
+				<el-table-column prop="tagNameList" label="标签">
+					<template #default="scope">
+						<div v-if="scope.row.tagNameList?.length > 0">
+							<el-tag
+								v-for="tag in scope.row.tagNameList"
+								class="tag-item"
+								:key="tag"
+								type="primary"
+							>
+								{{ tag }}
+							</el-tag>
+						</div>
+					</template>
+				</el-table-column>
 				<el-table-column prop="salesVolume" label="销量" />
 				<el-table-column prop="grade" label="等级" sortable="custom" />
-				<el-table-column prop="createTime" label="创建时间" sortable="custom" />
 				<el-table-column prop="action" label="操作">
 					<template #default="scope">
 						<div style="margin-bottom: 10px">
@@ -101,14 +135,25 @@
 		</div>
 		<div class="action">
 			<div class="left">
-				<!-- <el-button @click="onClickAdd">新增</el-button> -->
 				<el-button type="primary" :disabled="refreshing" @click="sameLevel"
 					>同步等级</el-button
+				>
+				<el-button @click="showUploadDialog = true">导入标签</el-button>
+				<el-button
+					type="primary"
+					:disabled="multipleSelection.length === 0"
+					@click="onHandleAddTag"
+					>批量新增标签</el-button
+				>
+				<el-button
+					type="primary"
+					:disabled="multipleSelection.length === 0"
+					@click="onHandleClearTag"
+					>批量清空标签</el-button
 				>
 				<el-button :disabled="!multipleSelection.length" @click="onHandleAction"
 					>删除</el-button
 				>
-				<el-button @click="openPage">上传</el-button>
 			</div>
 			<div class="right">
 				<el-pagination
@@ -153,8 +198,18 @@
 						</el-form-item>
 					</el-col>
 					<el-col :span="16">
-						<el-form-item label="图片名称" label-width="100">
+						<!-- <el-form-item label="图片名称" label-width="100">
 							<span class="form-item-value">{{ detailData.photoName }}</span>
+						</el-form-item> -->
+						<el-form-item label="款号" label-width="100">
+							<span class="form-item-value">{{ detailData.skuName }}</span>
+						</el-form-item>
+						<el-form-item
+							label="等级"
+							label-width="100"
+							v-if="dialogType == 'detail'"
+						>
+							<span class="form-item-value">{{ detailData.grade }}</span>
 						</el-form-item>
 						<el-form-item label="关联款号" label-width="100">
 							<el-select
@@ -167,7 +222,7 @@
 								<el-option
 									v-for="item in skuList"
 									:label="item.name"
-									:value="item.id"
+									:value="item.name"
 									:key="item.id"
 								/>
 							</el-select>
@@ -196,22 +251,12 @@
 						</el-form-item>
 					</el-col>
 				</el-row>
-				<el-row v-if="dialogType == 'detail'">
-					<el-col :span="6">
-						<el-form-item label="款号">
-							<span class="form-item-value">{{ detailData.skuName }}</span>
-						</el-form-item>
-					</el-col>
-					<el-col :span="6">
-						<el-form-item label="等级">
-							<span class="form-item-value">{{ detailData.grade }}</span>
-						</el-form-item>
-					</el-col>
-					<el-col :span="6">
+				<el-row>
+					<!-- <el-col :span="6">
 						<el-form-item label="创建时间">
 							<span class="form-item-value">{{ detailData.createTime }}</span>
 						</el-form-item>
-					</el-col>
+					</el-col> -->
 				</el-row>
 			</el-form>
 			<template v-if="dialogType == 'detail'">
@@ -247,6 +292,45 @@
 				alt="Preview Image"
 			/>
 		</el-dialog>
+		<el-dialog
+			v-model="butchTagDialogVisible"
+			title="批量标签处理"
+			width="500"
+			:close-on-click-modal="false"
+			center
+		>
+			<div>
+				标签：
+				<el-tag
+					style="margin-right: 10px"
+					v-for="(tag, index) in butchTags"
+					:key="tag"
+					closable
+					type="primary"
+					@close="handleRemoveButchTag(index)"
+				>
+					{{ tag }}
+				</el-tag>
+				<el-button type="primary" size="small" @click="onAddButchTag"
+					>新增</el-button
+				>
+			</div>
+			<template #footer>
+				<div class="dialog-action">
+					<el-button type="primary" @click="onSaveButchTag">确认</el-button>
+					<el-button @click="butchTagDialogVisible = false">取消</el-button>
+				</div>
+			</template>
+		</el-dialog>
+		<el-dialog
+			v-model="showUploadDialog"
+			title="上传"
+			width="500"
+			:close-on-click-modal="false"
+			center
+		>
+			<UploadField type="photo" />
+		</el-dialog>
 	</div>
 </template>
 
@@ -254,6 +338,7 @@
 import { ref, watch } from "vue";
 import { ElMessage, ElMessageBox } from "element-plus";
 import AddTag from "@/pages/product/components/AddTag.vue";
+import UploadField from "@/pages/product/components/UploadField.vue";
 import {
 	getModelList,
 	getPatternList,
@@ -263,8 +348,9 @@ import {
 	deletePattern,
 	updatePattern,
 	getUploadId,
+	batchSaveTag,
 } from "@/network/api";
-import { getPhotoGradeSelect } from "@/network/selectApi";
+import { getPhotoGradeSelect, getPhotoTagSelect } from "@/network/selectApi";
 import { uploadFile } from "@/workers/main.js";
 
 const formInline = ref({});
@@ -272,7 +358,7 @@ const currentPage = ref(1);
 const totalPage = ref(0);
 const multipleTableRef = ref();
 const multipleSelection = ref([]);
-const timeRange = ref([]);
+// const timeRange = ref([]);
 const title = ref("新增图案");
 const dialogVisible = ref(false);
 const previewDialogVisible = ref(false);
@@ -288,6 +374,8 @@ const skuList = ref([]);
 const tableData = ref([]);
 const linkSkuData = ref([]);
 const ruleList = ref([]);
+// 标签选择数据
+const tagSelectData = ref([]);
 
 // 图案编辑弹窗相关
 const fileList = ref([]);
@@ -297,6 +385,10 @@ const relevanceIds = ref([]);
 // 标签对话框相关
 const showTagDialog = ref(false);
 const uploading = ref(false);
+const tagEditType = ref("1"); // 1: 单个编辑 2: 批量编辑
+const butchTagDialogVisible = ref(false);
+const butchTags = ref([]);
+const showUploadDialog = ref(false); // 上传弹窗
 
 watch(
 	() => dialogVisible.value,
@@ -311,15 +403,15 @@ watch(
 	}
 );
 
-function onClickAdd() {
-	dialogType.value = "add";
-	title.value = "新增图案";
-	detailData.value = {
-		tagList: [],
-	};
-	linkSkuData.value = [];
-	dialogVisible.value = true;
-}
+// function onClickAdd() {
+// 	dialogType.value = "add";
+// 	title.value = "新增图案";
+// 	detailData.value = {
+// 		tagList: [],
+// 	};
+// 	linkSkuData.value = [];
+// 	dialogVisible.value = true;
+// }
 
 async function onEdit(value) {
 	dialogType.value = "edit";
@@ -334,29 +426,28 @@ async function showDetail(value) {
 }
 
 async function loadDetail(value) {
-	detailData.value = await getPatternDetail({ photo_id: value.id });
+	dialogVisible.value = true;
+	tagEditType.value = "1";
+	detailData.value = await getPatternDetail({ sku_id: value.id });
 	relevanceIds.value = (detailData.value?.relevanceSku ?? []).map(
-		(item) => item.id
+		(item) => item.name
 	);
-	if (detailData.value.photoName) {
+	if (detailData.value.photoSrc) {
 		fileList.value = [
 			{
-				name: detailData.value.photoName,
-				url: detailData.value.photoSrc,
+				url: detailData.value?.photoSrc,
 			},
 		];
 	}
 	if (dialogType.value === "detail") {
-		const res = await getLinkSku({ sku_id: detailData.value.skuId });
+		const res = await getLinkSku({ sku_id: detailData.value.id });
 		linkSkuData.value = res.sort((a, b) => b.top - a.top);
 	}
-
-	dialogVisible.value = true;
 }
 
 // 保存
 async function onSaveData() {
-	if (!detailData.value.photoName) {
+	if (!detailData.value.photoSrc) {
 		ElMessage({
 			message: "请上传图片",
 			type: "warning",
@@ -364,7 +455,7 @@ async function onSaveData() {
 		return;
 	}
 	try {
-		const p = { ...detailData.value, relevanceIds: relevanceIds.value };
+		const p = { ...detailData.value, relevanceSkuNames: relevanceIds.value };
 		if (detailData.value?.tagList.length > 0) {
 			p.tagNameList = detailData.value.tagList.map((item) => item.tagName);
 		}
@@ -381,19 +472,19 @@ async function onSaveData() {
 
 function onQuery() {
 	currentPage.value = 1;
-	if (timeRange.value && timeRange.value.length) {
-		params.value.start_time = timeRange.value[0];
-		params.value.end_time = timeRange.value[1];
-	} else {
-		delete params.value.start_time;
-		delete params.value.end_time;
-	}
+	// if (timeRange.value && timeRange.value.length) {
+	// 	params.value.start_time = timeRange.value[0];
+	// 	params.value.end_time = timeRange.value[1];
+	// } else {
+	// 	delete params.value.start_time;
+	// 	delete params.value.end_time;
+	// }
 	getList();
 }
 
 function reset() {
 	formInline.value = {};
-	timeRange.value = [];
+	// timeRange.value = [];
 	onQuery();
 }
 
@@ -429,7 +520,7 @@ function handleSelectionChange(val) {
 }
 
 // 删除前提示
-async function onHandleAction(type, status) {
+async function onHandleAction() {
 	await ElMessageBox.confirm("确认删除?", "提示");
 	ElMessageBox.confirm("是否删除款号和关联款号?", "Warning", {
 		confirmButtonText: "是",
@@ -503,7 +594,6 @@ async function handleImgUpload(file) {
 }
 
 async function handleRemove() {
-	detailData.value.photoName = "";
 	detailData.value.photoSrc = "";
 }
 
@@ -514,12 +604,19 @@ async function handleUploadSuccess(response, uploadFile, uploadFiles) {
 // 标签弹窗相关
 function onConfirmTag(data) {
 	const tag = data.type == "1" ? data.tagName : data.customTag;
-	if (!detailData.value.tagList) {
-		detailData.value.tagList = [];
-	}
-	const nameLists = detailData.value.tagList.map((item) => item.tagName);
-	if (!nameLists.includes(tag)) {
-		detailData.value.tagList.push({ tagName: tag });
+	if (tagEditType.value == "1") {
+		if (!detailData.value.tagList) {
+			detailData.value.tagList = [];
+		}
+		const nameLists = detailData.value.tagList.map((item) => item.tagName);
+		if (!nameLists.includes(tag)) {
+			detailData.value.tagList.push({ tagName: tag });
+		}
+	} else {
+		// 批量编辑
+		if (!butchTags.value.includes(tag)) {
+			butchTags.value.push(tag);
+		}
 	}
 	showTagDialog.value = false;
 }
@@ -555,6 +652,54 @@ function chooseImage() {
 function openPage() {
 	const url = `${process.env.BASE_URL}aliyunOSS/index.html`;
 	window.open(url, "_blank"); // 在新标签页中打开
+}
+
+// 批量处理标签
+async function handleRemoveButchTag(idx) {
+	butchTags.value.splice(idx, 1);
+}
+
+// 批量新增标签
+function onHandleAddTag() {
+	butchTags.value = [];
+	butchTagDialogVisible.value = true;
+}
+
+// 批量清空标签
+async function onHandleClearTag() {
+	await ElMessageBox.confirm("确认清空标签?", "提示");
+	const p = {
+		type: "delete",
+		skuNames: multipleSelection.value.map((item) => item.skuName),
+		tagNameList: [],
+	};
+	await batchSaveTag(p);
+	onQuery();
+}
+
+function onAddButchTag() {
+	tagEditType.value = "2";
+	showTagDialog.value = true;
+}
+
+async function onSaveButchTag() {
+	const p = {
+		type: "save",
+		skuNames: multipleSelection.value.map((item) => item.skuName),
+		tagNameList: butchTags.value,
+	};
+	await batchSaveTag(p);
+	butchTagDialogVisible.value = false;
+	onQuery();
+}
+
+// 远程搜索
+async function remoteMethod(tag_name) {
+	if (!tag_name) {
+		tagSelectData.value = [];
+	} else {
+		tagSelectData.value = await getPhotoTagSelect({ tag_name });
+	}
 }
 
 init();
