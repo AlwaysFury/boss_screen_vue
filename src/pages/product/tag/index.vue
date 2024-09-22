@@ -6,6 +6,7 @@
 					<el-input
 						v-model="formInline.tag_name"
 						placeholder="请输入标签名称"
+						class="w190"
 						clearable
 					/>
 				</el-form-item>
@@ -61,10 +62,10 @@
 				/>
 			</div>
 		</div>
-		<el-dialog v-model="dialogVisible" :title="title" width="400" center>
+		<el-dialog v-model="dialogVisible" :title="title" width="500" center>
 			<el-form
 				:model="detailData"
-				label-width="100"
+				label-width="160"
 				:rules="rules"
 				ref="editFormRef"
 			>
@@ -86,7 +87,7 @@
 					</el-select>
 				</el-form-item>
 				<el-form-item
-					label="订单状态"
+					label="订单状态(可多选)"
 					v-if="detailData.tagType === 'ORDER'"
 					prop="orderStatus"
 				>
@@ -105,7 +106,7 @@
 					</el-select>
 				</el-form-item>
 				<el-form-item
-					label="物流状态"
+					label="物流状态(可多选)"
 					prop="logisticsStatus"
 					v-if="detailData.tagType === 'ORDER'"
 				>
@@ -163,12 +164,12 @@ const editFormRef = ref(null);
 const rules = reactive({
 	tagName: [{ required: true, message: "请输入标签名称", trigger: "blur" }],
 	tagType: [{ required: true, message: "请选择标签类型", trigger: "change" }],
-	orderStatus: [
-		{ required: true, message: "请选择订单状态", trigger: "change" },
-	],
-	logisticsStatus: [
-		{ required: true, message: "请选择物流状态", trigger: "change" },
-	],
+	// orderStatus: [
+	// 	{ required: true, message: "请选择订单状态", trigger: "change" },
+	// ],
+	// logisticsStatus: [
+	// 	{ required: true, message: "请选择物流状态", trigger: "change" },
+	// ],
 });
 
 const params = ref({
@@ -186,7 +187,10 @@ function onClickAdd() {
 
 async function showDetail(value) {
 	title.value = "修改标签";
-	detailData.value = await getTagDetail({ tag_id: value.id });
+	const res = await getTagDetail({ tag_id: value.id });
+	const rule = res?.rule ?? {};
+	delete res.rule;
+	detailData.value = { ...res, ...rule };
 	dialogVisible.value = true;
 	resetForm();
 }
@@ -200,8 +204,29 @@ function resetForm() {
 async function onSaveData(formEl) {
 	if (!formEl) return;
 	await formEl.validate();
+	if (
+		detailData.value.tagType === "ORDER" &&
+		!detailData.value.orderStatus?.length &&
+		!detailData.value.logisticsStatus?.length
+	) {
+		ElMessage({
+			message: "请选择订单状态或物流状态",
+			type: "error",
+		});
+		return;
+	}
 	try {
-		const res = await updateTag(detailData.value);
+		const p = { ...detailData.value };
+		delete p.orderStatus;
+		delete p.logisticsStatus;
+		const rule = {};
+		if (detailData.value.orderStatus) {
+			rule.orderStatus = detailData.value.orderStatus;
+		}
+		if (detailData.value.logisticsStatus) {
+			rule.logisticsStatus = detailData.value.logisticsStatus;
+		}
+		const res = await updateTag({ ...p, rule });
 		ElMessage({
 			message: res?.message ?? "操作成功",
 			type: "success",

@@ -114,50 +114,37 @@
 							<span class="form-item-value">{{ extraInfo?.grade ?? "" }}</span>
 						</el-form-item>
 					</el-col>
+				</el-row>
+				<el-row :gutter="20">
 					<el-col :span="6">
-						<el-form-item label="近3天销量">
+						<el-form-item label="近3天销量(统计订单所得)" label-width="200">
 							<span class="form-item-value">{{
 								extraInfo.salesVolume3daysCount
 							}}</span>
 						</el-form-item>
 					</el-col>
 					<el-col :span="6">
-						<el-form-item label="近7天销量">
+						<el-form-item label="近7天销量(统计订单所得)" label-width="200">
 							<span class="form-item-value">{{
 								extraInfo.salesVolume7daysCount
 							}}</span>
 						</el-form-item>
 					</el-col>
-				</el-row>
-				<el-row :gutter="20">
 					<el-col :span="6">
-						<el-form-item label="近15天销量">
+						<el-form-item label="近15天销量(统计订单所得)" label-width="200">
 							<span class="form-item-value">{{
 								extraInfo.salesVolume15daysCount
 							}}</span>
 						</el-form-item>
 					</el-col>
 					<el-col :span="6">
-						<el-form-item label="近30天销量">
+						<el-form-item label="近30天销量(统计订单所得)" label-width="200">
 							<span class="form-item-value">{{
 								extraInfo.salesVolume30daysCount
 							}}</span>
 						</el-form-item>
 					</el-col>
-					<el-col :span="6">
-						<el-form-item label="转化率(加入购物车)">
-							<span class="form-item-value">{{ extraInfo.addCartRate }}</span>
-						</el-form-item>
-					</el-col>
-					<el-col :span="6">
-						<el-form-item label="转化率(已下单)">
-							<span class="form-item-value">{{ extraInfo.orderRate }}</span>
-						</el-form-item>
-					</el-col>
 				</el-row>
-				<el-form-item label="件数">
-					<span class="form-item-value">{{ extraInfo.productCount }}</span>
-				</el-form-item>
 				<div>
 					<el-button @click="getdialogTableData(1)">查看商品表现详情</el-button>
 					<el-button @click="getdialogTableData(2)">查看商品活动表现</el-button>

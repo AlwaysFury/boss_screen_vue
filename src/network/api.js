@@ -338,3 +338,8 @@ export function importProductTag(data) {
 export function importPatternTag(data) {
   return http.post(`${resquest}/photo/saveBatchTagByExcel`, data)
 }
+
+// 保存售后信息
+export function saveAfterSale(data) {
+  return http.post(`${resquest}/order/remark`, data)
+}

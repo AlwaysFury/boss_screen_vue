@@ -137,6 +137,16 @@
 						}}</el-tag>
 					</template>
 				</el-table-column>
+				<el-table-column prop="remark" label="处理结果">
+					<template #default="scope">
+						<div @click.stop="">
+							<el-input
+								v-model="scope.row.remark"
+								@blur="onRemarkBlur(scope.$index, scope.row)"
+							/>
+						</div>
+					</template>
+				</el-table-column>
 			</el-table>
 		</div>
 		<div class="action">
@@ -187,18 +197,18 @@
 import { ref } from "vue";
 import Detail from "./detail.vue";
 import TimeSelect from "@/pages/product/components/TimeSelect.vue";
-import { ElMessage } from "element-plus";
+import { ElMessage, ElMessageBox } from "element-plus";
 import {
 	getShopSelect,
 	getOrderList,
 	refreshOrders,
 	exportOrder,
 	refreshTag,
+	saveAfterSale,
 } from "@/network/api";
 import {
 	getOrderStatusSelect,
-	getProductTagSelect,
-	getPhotoTagSelect,
+	getOrderTagSelect,
 	getLogisticsSelect,
 } from "@/network/selectApi";
 
@@ -222,6 +232,8 @@ const showTimeSelect = ref(false);
 const tagData = ref([]);
 // 物流状态
 const logisticsSelectData = ref([]);
+
+const originalData = ref([]);
 
 function onQuery() {
 	currentPage.value = 1;
@@ -259,6 +271,7 @@ async function getList() {
 		...params.value,
 	});
 	tableData.value = res?.recordList ?? [];
+	originalData.value = JSON.parse(JSON.stringify(tableData.value));
 	totalPage.value = res?.count ?? 0;
 	if (refTable.value) {
 		refTable.value.setScrollTop(0);
@@ -347,9 +360,30 @@ async function remoteMethod(tag_name) {
 	if (!tag_name) {
 		tagData.value = [];
 	} else {
-		const res1 = await getProductTagSelect({ tag_name });
-		const res2 = await getPhotoTagSelect({ tag_name });
-		tagData.value = res1.concat(res2);
+		tagData.value = await getOrderTagSelect({ tag_name });
+	}
+}
+
+// 修改备注
+async function onRemarkBlur(index, row) {
+	if (row.remark && originalData.value[index].remark) {
+		ElMessageBox.confirm("确认修改备注吗？")
+			.then(async () => {
+				const p = {
+					id: row.id,
+					remark: row.remark,
+				};
+				await saveAfterSale(p);
+				ElMessage({
+					message: "修改成功",
+					type: "success",
+				});
+			})
+			.catch(() => {
+				console.log("取消修改", originalData.value[index].remark);
+
+				tableData.value[index].remark = originalData.value[index].remark;
+			});
 	}
 }
 

@@ -8,12 +8,14 @@
 						filterable
 						class="w190"
 						clearable
+						remote
+						:remote-method="remoteMethod2"
 					>
 						<el-option
-							v-for="item in skuList"
-							:label="item.name"
-							:value="item.id"
-							:key="item.id"
+							v-for="item in styleNoSelectData"
+							:label="item.value"
+							:value="item.key"
+							:key="item.key"
 						/>
 					</el-select>
 				</el-form-item>
@@ -115,7 +117,7 @@
 						</div>
 					</template>
 				</el-table-column>
-				<el-table-column prop="salesVolume" label="销量" />
+				<el-table-column prop="salesVolume" label="销量" sortable="custom" />
 				<el-table-column prop="grade" label="等级" sortable="custom" />
 				<el-table-column prop="action" label="操作">
 					<template #default="scope">
@@ -350,7 +352,11 @@ import {
 	getUploadId,
 	batchSaveTag,
 } from "@/network/api";
-import { getPhotoGradeSelect, getPhotoTagSelect } from "@/network/selectApi";
+import {
+	getPhotoGradeSelect,
+	getStyleNoSelect,
+	getPhotoTagSelect,
+} from "@/network/selectApi";
 import { uploadFile } from "@/workers/main.js";
 
 const formInline = ref({});
@@ -371,6 +377,8 @@ const params = ref({
 });
 
 const skuList = ref([]);
+// 筛选条件款号
+const styleNoSelectData = ref([]);
 const tableData = ref([]);
 const linkSkuData = ref([]);
 const ruleList = ref([]);
@@ -549,6 +557,7 @@ async function onSortChange(data) {
 	const obj = {
 		createTime: "s.create_time",
 		grade: "grade",
+		salesVolume: "salesVolume",
 	};
 	const key = obj[data.prop];
 	const rule =
@@ -699,6 +708,14 @@ async function remoteMethod(tag_name) {
 		tagSelectData.value = [];
 	} else {
 		tagSelectData.value = await getPhotoTagSelect({ tag_name });
+	}
+}
+
+async function remoteMethod2(query) {
+	if (query) {
+		styleNoSelectData.value = await getStyleNoSelect({ sku_name: query });
+	} else {
+		styleNoSelectData.value = [];
 	}
 }
 

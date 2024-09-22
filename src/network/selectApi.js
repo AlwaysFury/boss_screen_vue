@@ -13,6 +13,11 @@ export function getProductTagSelect(param) {
   return http.get(`${resquest}/product/tagSelect`, param)
 }
 
+// 获取订单标签
+export function getOrderTagSelect(param) {
+  return http.get(`${resquest}/order/tagSelect`, param)
+}
+
 // 获取图案等级
 export function getPhotoGradeSelect(param) {
   return http.get(`${resquest}/photo/gradeSelect`, param)

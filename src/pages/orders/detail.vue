@@ -243,7 +243,7 @@
 				<el-table-column prop="scenario" label="调整场景" />
 				<el-table-column prop="amount" label="调整金额" />
 				<el-table-column prop="cost_header" label="费用类型" />
-				<el-table-column prop="currency" label="调整金额" />
+				<!-- <el-table-column prop="currency" label="调整金额" /> -->
 				<el-table-column prop="remark" label="备注" />
 			</el-table>
 		</div>
